@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ticket Raiser — Admin Panel</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:13px;background:#f5f5f5;color:#111;min-height:100vh}
+  :root{
+    --bg:#ffffff;--bg2:#f5f5f5;--bg3:#eaeaea;
+    --text:#111111;--text2:#666666;--text3:#999999;
+    --border:rgba(0,0,0,0.12);--border2:rgba(0,0,0,0.22);
+    --info-bg:#e6f1fb;--info-text:#0c447c;
+    --warn-bg:#faeeda;--warn-text:#633806;
+    --success-bg:#eaf3de;--success-text:#27500a;
+    --danger-bg:#fcebeb;--danger-text:#791f1f;
+    --radius:8px;--radius-lg:12px;
+  }
+  @media(prefers-color-scheme:dark){
+    :root{
+      --bg:#1e1e1e;--bg2:#2a2a2a;--bg3:#333333;
+      --text:#f0f0f0;--text2:#aaaaaa;--text3:#777777;
+      --border:rgba(255,255,255,0.1);--border2:rgba(255,255,255,0.2);
+      --info-bg:#0c2a45;--info-text:#85b7eb;
+      --warn-bg:#3a2800;--warn-text:#fac775;
+      --success-bg:#1a2f0a;--success-text:#c0dd97;
+      --danger-bg:#2e0f0f;--danger-text:#f09595;
+    }
+  }
+  .app{max-width:1100px;margin:0 auto;padding:1.5rem}
+  .topbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem;flex-wrap:wrap;gap:10px}
+  .topbar h1{font-size:20px;font-weight:600;color:var(--text)}
+  .chip{font-size:10px;color:var(--text2);background:var(--bg3);padding:2px 10px;border-radius:999px}
+  .btn{padding:7px 14px;font-size:12px;border:1px solid var(--border2);border-radius:var(--radius);background:transparent;color:var(--text);cursor:pointer;font-family:inherit;transition:background .15s}
+  .btn:hover{background:var(--bg3)}
+  .btn-primary{background:var(--text);color:var(--bg);border-color:transparent}
+  .btn-primary:hover{opacity:.85}
+  .btn-danger{border-color:#e24b4a;color:#a32d2d}
+  .btn-danger:hover{background:var(--danger-bg)}
+  .btn-success{border-color:#639922;color:#3b6d11}
+  .btn-success:hover{background:var(--success-bg)}
+  .stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-bottom:1.25rem}
+  .stat{background:var(--bg3);border-radius:var(--radius);padding:14px 16px}
+  .stat-lbl{font-size:11px;color:var(--text2);margin-bottom:4px}
+  .stat-val{font-size:22px;font-weight:600;color:var(--text)}
+  .toolbar{display:flex;align-items:center;gap:8px;margin-bottom:.75rem;flex-wrap:wrap}
+  .toolbar input[type=text]{flex:1;min-width:150px;padding:7px 10px;font-size:12px;border:1px solid var(--border);border-radius:var(--radius);background:var(--bg);color:var(--text)}
+  .toolbar select{padding:7px 10px;font-size:12px;border:1px solid var(--border);border-radius:var(--radius);background:var(--bg);color:var(--text)}
+  .bulk-bar{display:none;align-items:center;gap:8px;padding:9px 14px;background:var(--info-bg);border-radius:var(--radius);margin-bottom:.75rem;flex-wrap:wrap}
+  .bulk-bar.show{display:flex}
+  .bulk-lbl{font-size:12px;color:var(--info-text);font-weight:600;flex:1}
+  .tbl-wrap{border:1px solid var(--border);border-radius:var(--radius-lg);overflow:auto;background:var(--bg)}
+  table{width:100%;border-collapse:collapse;font-size:12px;table-layout:fixed}
+  th{font-size:10px;font-weight:600;color:var(--text2);text-align:left;padding:10px 12px;background:var(--bg2);border-bottom:1px solid var(--border);text-transform:uppercase;letter-spacing:.05em;white-space:nowrap}
+  td{padding:10px 12px;border-bottom:1px solid var(--border);color:var(--text);vertical-align:middle}
+  tr:last-child td{border-bottom:none}
+  tr:hover td{background:var(--bg2)}
+  .badge{font-size:10px;padding:2px 8px;border-radius:999px;font-weight:500;white-space:nowrap;display:inline-block}
+  .b-open{background:var(--info-bg);color:var(--info-text)}
+  .b-prog{background:var(--warn-bg);color:var(--warn-text)}
+  .b-res{background:var(--success-bg);color:var(--success-text)}
+  .b-low{background:var(--success-bg);color:var(--success-text)}
+  .b-med{background:var(--warn-bg);color:var(--warn-text)}
+  .b-high{background:#faece7;color:#993c1d}
+  .b-crit{background:var(--danger-bg);color:var(--danger-text)}
+  .act-btn{font-size:10px;padding:3px 9px;border:1px solid var(--border);border-radius:var(--radius);background:transparent;color:var(--text2);cursor:pointer;font-family:inherit}
+  .act-btn:hover{background:var(--bg3);color:var(--text)}
+  .overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:100;align-items:flex-start;justify-content:center;padding:3rem 1rem;overflow-y:auto}
+  .overlay.open{display:flex}
+  .modal{background:var(--bg);border-radius:var(--radius-lg);border:1px solid var(--border);padding:1.5rem;width:540px;max-width:100%;position:relative}
+  .modal h2{font-size:16px;font-weight:600;margin-bottom:1rem}
+  .field{margin-bottom:12px}
+  .field label{font-size:11px;color:var(--text2);display:block;margin-bottom:4px;font-weight:500}
+  .field input,.field select,.field textarea{width:100%;padding:8px 10px;font-size:12px;border:1px solid var(--border2);border-radius:var(--radius);background:var(--bg);color:var(--text);font-family:inherit}
+  .field textarea{resize:vertical;min-height:72px}
+  .frow{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .modal-foot{display:flex;justify-content:flex-end;gap:8px;margin-top:1rem}
+  .xbtn{position:absolute;top:14px;right:16px;background:none;border:none;font-size:18px;cursor:pointer;color:var(--text2);line-height:1}
+  .tabs{display:flex;border-bottom:1px solid var(--border);margin-bottom:1rem}
+  .tab{padding:8px 16px;font-size:12px;cursor:pointer;color:var(--text2);border-bottom:2px solid transparent;background:none;border-top:none;border-left:none;border-right:none;font-family:inherit}
+  .tab.active{color:var(--text);border-bottom-color:var(--text);font-weight:600}
+  .comment-list{margin-bottom:10px;max-height:180px;overflow-y:auto}
+  .comment-item{padding:9px 12px;background:var(--bg2);border-radius:var(--radius);margin-bottom:6px}
+  .comment-meta{font-size:10px;color:var(--text2);margin-bottom:3px}
+  .comment-text{font-size:12px;color:var(--text);line-height:1.5}
+  .attach-list{margin-bottom:10px}
+  .attach-item{display:flex;align-items:center;gap:8px;padding:7px 12px;border:1px solid var(--border);border-radius:var(--radius);margin-bottom:5px}
+  .attach-name{flex:1;font-size:12px;color:var(--text)}
+  .attach-size{font-size:10px;color:var(--text2)}
+  .notif-log{max-height:150px;overflow-y:auto}
+  .notif-item{display:flex;align-items:flex-start;gap:8px;padding:7px 0;border-bottom:1px solid var(--border)}
+  .notif-item:last-child{border-bottom:none}
+  .notif-dot{width:7px;height:7px;border-radius:50%;background:#378add;margin-top:4px;flex-shrink:0}
+  .notif-dot.sent{background:#639922}
+  .notif-text{font-size:12px;color:var(--text)}
+  .notif-time{font-size:10px;color:var(--text2)}
+  .toast{display:none;position:fixed;bottom:1.5rem;left:50%;transform:translateX(-50%);padding:9px 18px;background:var(--text);color:var(--bg);border-radius:var(--radius-lg);font-size:12px;z-index:999;white-space:nowrap;box-shadow:0 2px 12px rgba(0,0,0,.2)}
+  .toast.show{display:block}
+  input[type=checkbox]{width:14px;height:14px;cursor:pointer;accent-color:var(--text)}
+  .file-drop{border:1px dashed var(--border2);border-radius:var(--radius);padding:18px;text-align:center;color:var(--text2);font-size:12px;cursor:pointer;margin-bottom:8px}
+  .file-drop:hover{background:var(--bg2)}
+  @media(max-width:600px){
+    .stats{grid-template-columns:repeat(2,1fr)}
+    .frow{grid-template-columns:1fr}
+    th:nth-child(4),td:nth-child(4){display:none}
+  }
+</style>
+</head>
+<body>
+
+<div class="app">
+  <div class="topbar">
+    <div style="display:flex;align-items:center;gap:10px">
+      <h1>Ticket Raiser</h1>
+      <span class="chip">Admin Panel</span>
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <button class="btn btn-success" onclick="exportCSV()">&#8595; Export CSV</button>
+      <button class="btn btn-primary" onclick="openForm()">+ Raise Ticket</button>
+    </div>
+  </div>
+
+  <div id="toast" class="toast"></div>
+  <div class="stats" id="stats"></div>
+
+  <div class="toolbar">
+    <input type="text" id="search" placeholder="Search tickets..." oninput="render()">
+    <select id="fStatus" onchange="render()">
+      <option value="">All status</option>
+      <option>Open</option><option>In Progress</option><option>Resolved</option>
+    </select>
+    <select id="fPrio" onchange="render()">
+      <option value="">All priority</option>
+      <option>Low</option><option>Medium</option><option>High</option><option>Critical</option>
+    </select>
+    <select id="fSort" onchange="render()">
+      <option value="newest">Newest first</option>
+      <option value="oldest">Oldest first</option>
+      <option value="prio">By priority</option>
+    </select>
+  </div>
+
+  <div class="bulk-bar" id="bulkBar">
+    <span class="bulk-lbl" id="bulkLbl">0 selected</span>
+    <select id="bulkStatus" style="padding:5px 8px;font-size:11px;border:1px solid var(--border2);border-radius:var(--radius);background:var(--bg);color:var(--text)">
+      <option value="">Change status...</option>
+      <option>Open</option><option>In Progress</option><option>Resolved</option>
+    </select>
+    <button class="btn" style="font-size:11px;padding:5px 10px" onclick="bulkChangeStatus()">Apply</button>
+    <button class="btn btn-danger" style="font-size:11px;padding:5px 10px" onclick="bulkDelete()">Delete selected</button>
+    <button class="btn" style="font-size:11px;padding:5px 10px" onclick="clearSelection()">Clear</button>
+  </div>
+
+  <div class="tbl-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th style="width:36px"><input type="checkbox" id="selectAll" onchange="toggleAll(this)"></th>
+          <th style="width:72px">ID</th>
+          <th>Title</th>
+          <th style="width:110px">Raised by</th>
+          <th style="width:90px">Category</th>
+          <th style="width:76px">Priority</th>
+          <th style="width:86px">Status</th>
+          <th style="width:86px">Date</th>
+          <th style="width:130px">Actions</th>
+        </tr>
+      </thead>
+      <tbody id="tbody"></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Form Modal -->
+<div class="overlay" id="formOverlay">
+  <div class="modal">
+    <button class="xbtn" onclick="closeForm()">&#x2715;</button>
+    <h2 id="formTitle">Raise New Ticket</h2>
+    <div class="frow">
+      <div class="field"><label>Title</label><input id="fTitle" type="text" placeholder="Issue title"></div>
+      <div class="field"><label>Raised by</label><input id="fUser" type="text" placeholder="Name / email"></div>
+    </div>
+    <div class="frow">
+      <div class="field"><label>Category</label>
+        <select id="fCat"><option>IT Support</option><option>HR</option><option>Finance</option><option>Operations</option><option>Security</option><option>Other</option></select>
+      </div>
+      <div class="field"><label>Assigned to</label><input id="fAssign" type="text" placeholder="Assignee"></div>
+    </div>
+    <div class="frow">
+      <div class="field"><label>Priority</label>
+        <select id="fPriority"><option>Low</option><option>Medium</option><option>High</option><option>Critical</option></select>
+      </div>
+      <div class="field"><label>Status</label>
+        <select id="fStatus2"><option>Open</option><option>In Progress</option><option>Resolved</option></select>
+      </div>
+    </div>
+    <div class="field"><label>Description</label><textarea id="fDesc" placeholder="Detailed description..."></textarea></div>
+    <div class="field"><label>Notify email on creation (optional)</label><input id="fEmail" type="text" placeholder="email@example.com"></div>
+    <div class="modal-foot">
+      <button class="btn" onclick="closeForm()">Cancel</button>
+      <button class="btn btn-primary" onclick="saveTicket()">Save Ticket</button>
+    </div>
+  </div>
+</div>
+
+<!-- Detail Modal -->
+<div class="overlay" id="detailOverlay">
+  <div class="modal" style="width:560px">
+    <button class="xbtn" onclick="closeDetail()">&#x2715;</button>
+    <div id="detailHead"></div>
+    <div class="tabs">
+      <button class="tab active" onclick="switchTab(this,'tabComments')">Comments</button>
+      <button class="tab" onclick="switchTab(this,'tabAttach')">Attachments</button>
+      <button class="tab" onclick="switchTab(this,'tabNotif')">Notifications</button>
+    </div>
+    <div id="tabComments">
+      <div class="comment-list" id="commentList"></div>
+      <div class="field"><textarea id="commentInput" placeholder="Add a comment..." style="min-height:60px"></textarea></div>
+      <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:6px">
+        <input id="commentAuthor" type="text" placeholder="Your name" style="width:140px;padding:7px 10px;font-size:12px;border:1px solid var(--border2);border-radius:var(--radius);background:var(--bg);color:var(--text);font-family:inherit">
+        <button class="btn btn-primary" onclick="addComment()">Post comment</button>
+      </div>
+    </div>
+    <div id="tabAttach" style="display:none">
+      <div class="file-drop" onclick="document.getElementById('fileInput').click()">&#128206; Click to attach a file</div>
+      <input type="file" id="fileInput" style="display:none" onchange="attachFile(this)">
+      <div class="attach-list" id="attachList"></div>
+    </div>
+    <div id="tabNotif" style="display:none">
+      <div class="field">
+        <label>Send email notification</label>
+        <div style="display:flex;gap:8px">
+          <input id="notifEmail" type="text" placeholder="recipient@example.com" style="flex:1;padding:7px 10px;font-size:12px;border:1px solid var(--border2);border-radius:var(--radius);background:var(--bg);color:var(--text);font-family:inherit">
+          <select id="notifType" style="padding:7px 10px;font-size:12px;border:1px solid var(--border2);border-radius:var(--radius);background:var(--bg);color:var(--text)">
+            <option>Status update</option><option>New comment</option><option>Resolved</option><option>Escalation</option>
+          </select>
+          <button class="btn btn-primary" onclick="sendNotif()">Send</button>
+        </div>
+      </div>
+      <div class="notif-log" id="notifLog"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+const PORD={Critical:0,High:1,Medium:2,Low:3};
+let tickets=[
+  {id:'TK-001',title:'Login page broken on Safari',user:'Priya Mehta',cat:'IT Support',priority:'High',status:'Open',date:'2026-04-06',desc:'Safari 17 users cannot login.',assign:'Dev Team',comments:[{author:'Admin',text:'Investigating now.',time:'Apr 6, 10:12'}],attachments:[],notifs:[{email:'dev@company.com',type:'Status update',time:'Apr 6, 10:15',sent:true}]},
+  {id:'TK-002',title:'Salary slip not generated for March',user:'Rohan Sharma',cat:'HR',priority:'Critical',status:'In Progress',date:'2026-04-05',desc:'March payroll slips missing for 12 employees.',assign:'Payroll Admin',comments:[],attachments:[],notifs:[]},
+  {id:'TK-003',title:'VPN access denied for new joinees',user:'Neha Kulkarni',cat:'IT Support',priority:'Medium',status:'Open',date:'2026-04-05',desc:'5 new employees cannot connect VPN.',assign:'IT Helpdesk',comments:[],attachments:[],notifs:[]},
+  {id:'TK-004',title:'Expense report form not submitting',user:'Amit Bose',cat:'Finance',priority:'Low',status:'Resolved',date:'2026-04-03',desc:'Form validation fixed.',assign:'Finance Team',comments:[{author:'Amit Bose',text:'Confirmed fixed, thanks!',time:'Apr 4, 9:00'}],attachments:[{name:'screenshot.png',size:'84 KB'}],notifs:[{email:'amit@company.com',type:'Resolved',time:'Apr 4, 9:05',sent:true}]},
+  {id:'TK-005',title:'Suspicious login attempt detected',user:'Suresh Iyer',cat:'Security',priority:'Critical',status:'In Progress',date:'2026-04-04',desc:'Multiple failed logins from unknown IP.',assign:'Security Ops',comments:[],attachments:[],notifs:[]},
+];
+let selected=new Set(),editId=null,detailId=null;
+
+function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2500)}
+function sbadge(s){const m={Open:'b-open','In Progress':'b-prog',Resolved:'b-res'};return`<span class="badge ${m[s]||'b-open'}">${s}</span>`}
+function pbadge(p){const m={Low:'b-low',Medium:'b-med',High:'b-high',Critical:'b-crit'};return`<span class="badge ${m[p]||'b-med'}">${p}</span>`}
+
+function renderStats(){
+  const t=tickets.length,o=tickets.filter(x=>x.status==='Open').length,ip=tickets.filter(x=>x.status==='In Progress').length,c=tickets.filter(x=>x.priority==='Critical').length;
+  document.getElementById('stats').innerHTML=`
+    <div class="stat"><div class="stat-lbl">Total tickets</div><div class="stat-val">${t}</div></div>
+    <div class="stat"><div class="stat-lbl">Open</div><div class="stat-val" style="color:var(--info-text)">${o}</div></div>
+    <div class="stat"><div class="stat-lbl">In progress</div><div class="stat-val" style="color:var(--warn-text)">${ip}</div></div>
+    <div class="stat"><div class="stat-lbl">Critical</div><div class="stat-val" style="color:var(--danger-text)">${c}</div></div>`;
+}
+function render(){
+  renderStats();
+  const q=document.getElementById('search').value.toLowerCase(),st=document.getElementById('fStatus').value,pr=document.getElementById('fPrio').value,so=document.getElementById('fSort').value;
+  let list=tickets.filter(t=>(!q||t.title.toLowerCase().includes(q)||t.user.toLowerCase().includes(q)||t.id.toLowerCase().includes(q))&&(!st||t.status===st)&&(!pr||t.priority===pr));
+  if(so==='oldest')list.sort((a,b)=>a.date.localeCompare(b.date));
+  else if(so==='prio')list.sort((a,b)=>PORD[a.priority]-PORD[b.priority]);
+  else list.sort((a,b)=>b.date.localeCompare(a.date));
+  const tbody=document.getElementById('tbody');
+  if(!list.length){tbody.innerHTML=`<tr><td colspan="9" style="text-align:center;padding:2.5rem;color:var(--text2)">No tickets found</td></tr>`;return}
+  tbody.innerHTML=list.map(t=>`<tr>
+    <td><input type="checkbox" ${selected.has(t.id)?'checked':''} onchange="toggleOne('${t.id}',this)"></td>
+    <td style="font-family:monospace;font-size:10px;color:var(--text2)">${t.id}</td>
+    <td style="font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${t.title}">${t.title}</td>
+    <td style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${t.user}</td>
+    <td style="color:var(--text2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${t.cat}</td>
+    <td>${pbadge(t.priority)}</td>
+    <td>${sbadge(t.status)}</td>
+    <td style="color:var(--text2);font-size:11px">${t.date}</td>
+    <td><div style="display:flex;gap:4px;flex-wrap:wrap">
+      <button class="act-btn" onclick="openDetail('${t.id}')">View</button>
+      <button class="act-btn" onclick="openForm('${t.id}')">Edit</button>
+      <button class="act-btn" style="color:#a32d2d" onclick="delTicket('${t.id}')">Del</button>
+    </div></td>
+  </tr>`).join('');
+  updateBulkBar();
+  document.getElementById('selectAll').checked=selected.size>0&&list.every(t=>selected.has(t.id));
+}
+function toggleAll(cb){const q=document.getElementById('search').value.toLowerCase(),st=document.getElementById('fStatus').value,pr=document.getElementById('fPrio').value;let list=tickets.filter(t=>(!q||t.title.toLowerCase().includes(q)||t.user.toLowerCase().includes(q)||t.id.toLowerCase().includes(q))&&(!st||t.status===st)&&(!pr||t.priority===pr));if(cb.checked)list.forEach(t=>selected.add(t.id));else list.forEach(t=>selected.delete(t.id));render()}
+function toggleOne(id,cb){if(cb.checked)selected.add(id);else selected.delete(id);updateBulkBar()}
+function updateBulkBar(){const bb=document.getElementById('bulkBar');if(selected.size>0){bb.classList.add('show');document.getElementById('bulkLbl').textContent=selected.size+' ticket'+(selected.size>1?'s':'')+' selected'}else bb.classList.remove('show')}
+function clearSelection(){selected.clear();render()}
+function bulkDelete(){if(!confirm('Delete '+selected.size+' ticket(s)?'))return;tickets=tickets.filter(t=>!selected.has(t.id));selected.clear();render();toast('Tickets deleted')}
+function bulkChangeStatus(){const s=document.getElementById('bulkStatus').value;if(!s)return;tickets.forEach(t=>{if(selected.has(t.id))t.status=s});selected.clear();render();toast('Status updated to: '+s)}
+function nextId(){const n=tickets.map(t=>parseInt(t.id.replace('TK-',''))).filter(Boolean);return'TK-'+String((n.length?Math.max(...n):0)+1).padStart(3,'0')}
+function openForm(id=null){editId=id;document.getElementById('formTitle').textContent=id?'Edit Ticket':'Raise New Ticket';if(id){const t=tickets.find(x=>x.id===id);document.getElementById('fTitle').value=t.title;document.getElementById('fUser').value=t.user;document.getElementById('fCat').value=t.cat;document.getElementById('fAssign').value=t.assign||'';document.getElementById('fPriority').value=t.priority;document.getElementById('fStatus2').value=t.status;document.getElementById('fDesc').value=t.desc;document.getElementById('fEmail').value=''}else{['fTitle','fUser','fAssign','fDesc','fEmail'].forEach(f=>document.getElementById(f).value='');document.getElementById('fCat').value='IT Support';document.getElementById('fPriority').value='Medium';document.getElementById('fStatus2').value='Open'}document.getElementById('formOverlay').classList.add('open')}
+function closeForm(){document.getElementById('formOverlay').classList.remove('open');editId=null}
+function saveTicket(){const title=document.getElementById('fTitle').value.trim(),user=document.getElementById('fUser').value.trim();if(!title||!user){alert('Title and Raised by are required.');return}const email=document.getElementById('fEmail').value.trim(),data={title,user,cat:document.getElementById('fCat').value,assign:document.getElementById('fAssign').value,priority:document.getElementById('fPriority').value,status:document.getElementById('fStatus2').value,desc:document.getElementById('fDesc').value,date:new Date().toISOString().split('T')[0]};if(editId){const idx=tickets.findIndex(t=>t.id===editId);tickets[idx]={...tickets[idx],...data}}else{tickets.unshift({id:nextId(),...data,comments:[],attachments:[],notifs:[]})}if(email&&!editId){tickets[0].notifs.push({email,type:'Ticket raised',time:new Date().toLocaleString([],{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'}),sent:true});toast('Ticket saved. Notification logged for '+email)}else toast(editId?'Ticket updated':'Ticket raised');closeForm();render()}
+function delTicket(id){if(!confirm('Delete this ticket?'))return;tickets=tickets.filter(t=>t.id!==id);render();toast('Ticket deleted')}
+function openDetail(id){
+  detailId=id;const t=tickets.find(x=>x.id===id);
+  document.getElementById('detailHead').innerHTML=`<div style="margin-bottom:.85rem"><div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;flex-wrap:wrap"><span style="font-size:15px;font-weight:600;color:var(--text)">${t.title}</span>${sbadge(t.status)}</div><div style="font-size:11px;color:var(--text2)">Raised by ${t.user} &nbsp;|&nbsp; ${t.cat} &nbsp;|&nbsp; ${pbadge(t.priority)} &nbsp;|&nbsp; ${t.date}${t.assign?` &nbsp;|&nbsp; Assigned: ${t.assign}`:''}</div>${t.desc?`<div style="margin-top:8px;font-size:12px;color:var(--text);line-height:1.6;padding:8px 12px;background:var(--bg2);border-radius:var(--radius)">${t.desc}</div>`:''}</div>`;
+  renderComments(t);renderAttachments(t);renderNotifs(t);
+  document.querySelectorAll('.tab').forEach((tb,i)=>{tb.classList.toggle('active',i===0)});
+  document.getElementById('tabComments').style.display='';
+  document.getElementById('tabAttach').style.display='none';
+  document.getElementById('tabNotif').style.display='none';
+  document.getElementById('detailOverlay').classList.add('open');
+}
+function closeDetail(){document.getElementById('detailOverlay').classList.remove('open');detailId=null}
+function switchTab(el,tabId){document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));el.classList.add('active');['tabComments','tabAttach','tabNotif'].forEach(id=>{document.getElementById(id).style.display=id===tabId?'':'none'})}
+function renderComments(t){const cl=document.getElementById('commentList');if(!t.comments.length){cl.innerHTML=`<div style="color:var(--text2);font-size:12px;padding:8px 0">No comments yet.</div>`;return}cl.innerHTML=t.comments.map(c=>`<div class="comment-item"><div class="comment-meta">${c.author} &nbsp;·&nbsp; ${c.time}</div><div class="comment-text">${c.text}</div></div>`).join('')}
+function addComment(){const txt=document.getElementById('commentInput').value.trim(),author=document.getElementById('commentAuthor').value.trim()||'Admin';if(!txt)return;const t=tickets.find(x=>x.id===detailId);t.comments.push({author,text:txt,time:new Date().toLocaleString([],{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'})});document.getElementById('commentInput').value='';renderComments(t);toast('Comment posted')}
+function renderAttachments(t){const al=document.getElementById('attachList');if(!t.attachments.length){al.innerHTML=`<div style="color:var(--text2);font-size:12px;padding:6px 0">No attachments yet.</div>`;return}al.innerHTML=t.attachments.map((a,i)=>`<div class="attach-item"><span class="attach-name">&#128206; ${a.name}</span><span class="attach-size">${a.size}</span><button class="act-btn" style="color:#a32d2d" onclick="removeAttach(${i})">Remove</button></div>`).join('')}
+function attachFile(inp){if(!inp.files.length)return;const t=tickets.find(x=>x.id===detailId);const f=inp.files[0];t.attachments.push({name:f.name,size:Math.round(f.size/1024||1)+' KB'});inp.value='';renderAttachments(t);toast('File attached: '+f.name)}
+function removeAttach(i){const t=tickets.find(x=>x.id===detailId);t.attachments.splice(i,1);renderAttachments(t);toast('Attachment removed')}
+function renderNotifs(t){const nl=document.getElementById('notifLog');if(!t.notifs.length){nl.innerHTML=`<div style="color:var(--text2);font-size:12px;padding:6px 0">No notifications sent yet.</div>`;return}nl.innerHTML=t.notifs.map(n=>`<div class="notif-item"><div class="notif-dot ${n.sent?'sent':''}"></div><div><div class="notif-text">${n.type} &rarr; ${n.email}</div><div class="notif-time">${n.time}</div></div></div>`).join('')}
+function sendNotif(){const email=document.getElementById('notifEmail').value.trim(),type=document.getElementById('notifType').value;if(!email)return;const t=tickets.find(x=>x.id===detailId);t.notifs.push({email,type,time:new Date().toLocaleString([],{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'}),sent:true});document.getElementById('notifEmail').value='';renderNotifs(t);toast('Notification logged for '+email)}
+function exportCSV(){
+  const h=['ID','Title','Raised By','Category','Priority','Status','Assigned To','Date','Description'];
+  const rows=tickets.map(t=>[t.id,`"${t.title}"`,t.user,t.cat,t.priority,t.status,t.assign||'',t.date,`"${(t.desc||'').replace(/"/g,"'")}"`]);
+  const csv=[h.join(','),...rows.map(r=>r.join(','))].join('\n');
+  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));a.download='tickets_'+new Date().toISOString().split('T')[0]+'.csv';a.click();
+  toast('CSV exported');
+}
+document.getElementById('formOverlay').addEventListener('click',function(e){if(e.target===this)closeForm()});
+document.getElementById('detailOverlay').addEventListener('click',function(e){if(e.target===this)closeDetail()});
+render();
+</script>
+</body>
+</html>
